@@ -1,7 +1,7 @@
 import os
 import logging
 
-from commands import GamingPollCommand, VypicujVilaCommand
+from commands import GamingPollCommand, VypicujVilaCommand, SendImageCommand
 from signalbot import SignalBot
 
 import asyncio
@@ -40,6 +40,7 @@ def main():
 
     bot.register(GamingPollCommand())
     bot.register(VypicujVilaCommand())
+    bot.register(SendImageCommand())
 
     for contact, c in existing_contacts.items():
         try:

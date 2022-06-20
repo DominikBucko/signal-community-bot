@@ -1,3 +1,5 @@
+import random
+
 from signalbot import Command, Context
 
 spravicky = ["VILO UZ DRZ PICU", "VILO KLUD", "VILO OMG UZ CICHO", "KURVA DO PICI VILO ACH", "...", "uz si picujte sami, ja uz nevladzem"]
