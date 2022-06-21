@@ -9,7 +9,7 @@ class GamingPollCommand(Command):
         command = c.message.text
 
         if command.lower() == "no so":
-            await c.send(" TEST UPDATE - NO CO KOKOCI, DAVAJTE REACTY TAKOJ!!!!\n"
+            await c.send(" TEST UPDATE PIPELINE - NO CO KOKOCI, DAVAJTE REACTY TAKOJ!!!!\n"
                          f"❤ - Yes\n"
                          f"👎 - No\n"
                          f"👍 - Yes, ked ostatni pojdu\n"
