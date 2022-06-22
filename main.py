@@ -28,7 +28,7 @@ def main():
         try:
             bot.listen(**c)
         except Exception as e:
-            print(e, contact, c)
+            print(e, c)
 
     bot_thread = threading.Thread(target=init_gaming_poll,
                                   args=(bot, bot.storage["registered_chats"]["bot test group"]["optional_id"]))

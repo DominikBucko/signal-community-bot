@@ -1,14 +1,16 @@
 import asyncio
 import time
+import shelve
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import logging
-
 
 from .api import SignalAPI, ReceiveMessagesError
 from .command import Command
 from .message import Message, UnknownMessageFormatError, MessageType
 from .storage import RedisStorage, InMemoryStorage
 from .context import Context
+from .bot_utils import is_group_id, is_internal_id, is_phone_number, \
+    should_react, SignalBotError, resolve_receiver
 
 
 class SignalBot:
@@ -19,23 +21,20 @@ class SignalBot:
         ===============
         signal_service: "127.0.0.1:8080"
         phone_number: "+49123456789"
-        storage:
-            redis_host: "redis"
-            redis_port: 6379
         """
         self.config = config
 
         self.commands = []  # populated by .register()
 
-        self.user_chats = set()  # populated by .listenUser()
-        self.group_chats = {}  # populated by .listenGroup()
+        self.user_chats = set()
+        self.group_chats = {}
+        self.admins = admins
 
         # Required
         self._init_api()
         self._init_event_loop()
         self._init_scheduler()
 
-        # Optional
         self._init_storage()
 
     def _init_api(self):
@@ -52,15 +51,11 @@ class SignalBot:
 
     def _init_storage(self):
         try:
-            config_storage = self.config["storage"]
-            self._redis_host = config_storage["redis_host"]
-            self._redis_port = config_storage["redis_port"]
-            self.storage = RedisStorage(self._redis_host, self._redis_port, config_storage["redis_password"])
-        except Exception:
-            self.storage = InMemoryStorage()
-            logging.warning(
-                "[Bot] Could not initialize Redis. In-memory storage will be used. "
-                "Restarting will delete the storage!"
+            self.storage = shelve.open(self.config['object_storage_file'], writeback=True)
+
+        except Exception as e:
+            logging.error(
+                "[Bot] Could not initialize Shelve Storage."
             )
             raise e
 
@@ -72,67 +67,23 @@ class SignalBot:
 
     def listen(self, required_id: str, optional_id: str = None):
         # Case 1: required id is a phone number, optional_id is not being used
-        if self._is_phone_number(required_id):
-            phone_number = required_id
-            self.listenUser(phone_number)
+        if is_phone_number(required_id):
+            self.user_chats.add(required_id)
             return
 
         # Case 2: required id is a group id
-        if self._is_group_id(required_id) and self._is_internal_id(optional_id):
-            group_id = required_id
-            internal_id = optional_id
-            self.listenGroup(group_id, internal_id)
+        if is_group_id(required_id) and is_internal_id(optional_id):
+            self.group_chats[optional_id] = required_id
             return
 
         # Case 3: optional_id is a group id (Case 2 swapped)
-        if self._is_internal_id(required_id) and self._is_group_id(optional_id):
-            group_id = optional_id
-            internal_id = required_id
-            self.listenGroup(group_id, internal_id)
+        if is_internal_id(required_id) and is_group_id(optional_id):
+            self.group_chats[required_id] = optional_id
             return
 
         logging.warning(
             "[Bot] Can't listen for user/group because input does not look valid"
         )
-
-    def listenUser(self, phone_number: str):
-        if not self._is_phone_number(phone_number):
-            logging.warning(
-                "[Bot] Can't listen for user because phone number does not look valid"
-            )
-            return
-
-        self.user_chats.add(phone_number)
-
-    def listenGroup(self, group_id: str, internal_id: str):
-        if not (self._is_group_id(group_id) and self._is_internal_id(internal_id)):
-            logging.warning(
-                "[Bot] Can't listen for group because group id and "
-                "internal id do not look valid"
-            )
-            return
-
-        self.group_chats[internal_id] = group_id
-
-    def _is_phone_number(self, phone_number: str) -> bool:
-        if phone_number is None:
-            return False
-        return phone_number[0] == "+"
-
-    def _is_group_id(self, group_id: str) -> bool:
-        if group_id is None:
-            return False
-        prefix = "group."
-        if group_id[: len(prefix)] != prefix:
-            return False
-        if group_id[-1] != "=":
-            return False
-        return True
-
-    def _is_internal_id(self, internal_id: str) -> bool:
-        if internal_id is None:
-            return False
-        return internal_id[-1] == "="
 
     def register(self, command: Command):
         command.bot = self
@@ -150,13 +101,13 @@ class SignalBot:
         self._event_loop.run_forever()
 
     async def send(
-        self,
-        receiver: str,
-        text: str,
-        base64_attachments: list = None,
-        listen: bool = False,
+            self,
+            receiver: str,
+            text: str,
+            base64_attachments: list = None,
+            listen: bool = False,
     ) -> int:
-        resolved_receiver = self._resolve_receiver(receiver)
+        resolved_receiver = resolve_receiver(self.group_chats, receiver)
         resp = await self._signal.send(
             resolved_receiver, text, base64_attachments=base64_attachments
         )
@@ -165,7 +116,7 @@ class SignalBot:
         logging.info(f"[Bot] New message {timestamp} sent:\n{text}")
 
         if listen:
-            if self._is_phone_number(receiver):
+            if is_phone_number(receiver):
                 sent_message = Message(
                     source=receiver,  # otherwise we can't respond in the right chat
                     timestamp=timestamp,
@@ -189,33 +140,19 @@ class SignalBot:
 
     async def react(self, message: Message, emoji: str):
         # TODO: check that emoji is really an emoji
-        recipient = self._resolve_receiver(message.recipient())
+        recipient = resolve_receiver(self.group_chats, message.recipient())
         target_author = message.source
         timestamp = message.timestamp
         await self._signal.react(recipient, emoji, target_author, timestamp)
         logging.info(f"[Bot] New reaction: {emoji}")
 
     async def start_typing(self, receiver: str):
-        receiver = self._resolve_receiver(receiver)
+        receiver = resolve_receiver(self.group_chats, receiver)
         await self._signal.start_typing(receiver)
 
     async def stop_typing(self, receiver: str):
-        receiver = self._resolve_receiver(receiver)
+        receiver = resolve_receiver(self.group_chats, receiver)
         await self._signal.stop_typing(receiver)
-
-    def _resolve_receiver(self, receiver: str) -> str:
-        if self._is_phone_number(receiver):
-            return receiver
-
-        if receiver in self.group_chats:
-            internal_id = receiver
-            group_id = self.group_chats[internal_id]
-            return group_id
-
-        raise SignalBotError(
-            f"receiver {receiver} is not a phone number and not in self.group_chats. "
-            "This should never happen."
-        )
 
     async def _produce_consume_messages(self, producers=1, consumers=3) -> None:
         producers = [
@@ -240,7 +177,7 @@ class SignalBot:
                 except UnknownMessageFormatError:
                     continue
 
-                if not self._should_react(message):
+                if not should_react(self.user_chats, self.group_chats, message):
                     continue
 
                 await self._ask_commands_to_handle(message)
@@ -248,17 +185,6 @@ class SignalBot:
         except ReceiveMessagesError as e:
             # TODO: retry strategy
             raise SignalBotError(f"Cannot receive messages: {e}")
-
-    def _should_react(self, message: Message) -> bool:
-        group = message.group
-        if group in self.group_chats:
-            return True
-
-        source = message.source
-        if source in self.user_chats:
-            return True
-
-        return False
 
     async def _ask_commands_to_handle(self, message: Message):
         for command in self.commands:
@@ -275,7 +201,7 @@ class SignalBot:
     async def _consume_new_item(self, name: int) -> None:
         command, message, t = await self._q.get()
         now = time.perf_counter()
-        logging.info(f"[Bot] Consumer #{name} got new job in {now-t:0.5f} seconds")
+        logging.info(f"[Bot] Consumer #{name} got new job in {now - t:0.5f} seconds")
 
         # handle Command
         try:
@@ -287,7 +213,3 @@ class SignalBot:
 
         # done
         self._q.task_done()
-
-
-class SignalBotError(Exception):
-    pass
