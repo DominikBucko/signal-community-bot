@@ -15,6 +15,5 @@ class GamingPollCommand(Command):
                          f"👍 - Yes, ked ostatni pojdu\n"
                          f"😥 - Mozem jebac\n"
                          f"😮 - Neskor sa napojim"
-                         # f"😂 - "
                          )
             return

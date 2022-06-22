@@ -12,7 +12,7 @@ from .context import Context
 
 
 class SignalBot:
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, admins: dict):
         """SignalBot
 
         Example Config:
@@ -62,6 +62,7 @@ class SignalBot:
                 "[Bot] Could not initialize Redis. In-memory storage will be used. "
                 "Restarting will delete the storage!"
             )
+            raise e
 
     def _init_scheduler(self):
         try:
