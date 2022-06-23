@@ -8,12 +8,3 @@ services:
       - "8080:8080" #map docker port 8080 to host port 8080.
     volumes:
       - "./signal-cli-config:/home/.local/share/signal-cli"
-
-  redis:
-    image: redis:6.2-alpine
-    restart: always
-    ports:
-      - '6379:6379'
-    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
-    volumes:
-      - "./signal-cli-config:/home/redis"
