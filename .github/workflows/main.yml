@@ -36,6 +36,8 @@ jobs:
           script: |
             cd signal-community-bot
             git pull origin main
+            sudo docker-compose -f docker-compose-cli-api.yml down
+            sudo docker-compose -f docker-compose-cli-api.yml up -d
             sudo systemctl daemon-reload
             sudo systemctl restart signalbot.service
             
