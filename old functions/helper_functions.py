@@ -2,20 +2,14 @@ import asyncio
 import aiohttp
 import logging
 from signalbot.bot_utils import resolve_receiver
-
-
-def register_contact_in_storage(bot, name, phone_number):
-    bot.storage["registered_chats"][name] = {"required_id": phone_number}
-    bot.storage.sync()
-    bot.listen(**bot.storage["registered_chats"][name])
+from signalbot import Command, Context
+import functools
 
 
 # run with asyncio.run(get_group_registration_dict)
 async def get_group_registration_dict(bot, optional_id):
-    signal_service = bot.config["signal_service"]
-    phone_number = bot.config["phone_number"]
     async with aiohttp.ClientSession() as session:
-        async with session.get(f"http://{signal_service}/v1/groups/{phone_number}") as resp:
+        async with session.get(f"http://{bot.signal_service}/v1/groups/{bot.phone_number}") as resp:
             if resp.status == 200:
                 response_body = await resp.json()
                 for group in response_body:
@@ -46,3 +40,21 @@ def get_admin_name(bot, admin_number):
     for name, number in bot.admins.items():
         if number == admin_number:
             return name
+
+
+async def mention_required(func):
+    # @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        context: Context
+        try:
+            context = args[1]
+        except IndexError:
+            context = None
+
+        if context is None:
+            return
+        if context.bot.phone_number in context.message.mentions:
+            await func(*args, **kwargs)
+
+        return
+    return wrapper

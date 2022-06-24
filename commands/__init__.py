@@ -1,6 +1,5 @@
-from .gaming_poll import GamingPollCommand
-from .vypicuj_vila import VypicujVilaCommand
-from .jesus import SendImageCommand
+from .nonstatic_commands import FunctionalCommands
+from .static_commands import StaticCommands
 
 
-__all__ = ["GamingPollCommand", "VypicujVilaCommand", "SendImageCommand"]
+__all__ = ["FunctionalCommands", "StaticCommands"]

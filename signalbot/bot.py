@@ -1,20 +1,20 @@
 import asyncio
 import time
 import shelve
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import logging
+
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from .api import SignalAPI, ReceiveMessagesError
 from .command import Command
 from .message import Message, UnknownMessageFormatError, MessageType
-from .storage import RedisStorage, InMemoryStorage
 from .context import Context
 from .bot_utils import is_group_id, is_internal_id, is_phone_number, \
     should_react, SignalBotError, resolve_receiver
 
 
 class SignalBot:
-    def __init__(self, config: dict, admins: dict):
+    def __init__(self, config: dict):
         """SignalBot
 
         Example Config:
@@ -25,23 +25,19 @@ class SignalBot:
         self.config = config
 
         self.commands = []  # populated by .register()
-
         self.user_chats = set()
         self.group_chats = {}
-        self.admins = admins
 
         # Required
         self._init_api()
         self._init_event_loop()
         self._init_scheduler()
 
-        self._init_storage()
-
     def _init_api(self):
         try:
-            self._phone_number = self.config["phone_number"]
-            self._signal_service = self.config["signal_service"]
-            self._signal = SignalAPI(self._signal_service, self._phone_number)
+            self.phone_number = self.config["phone_number"]
+            self.signal_service = self.config["signal_service"]
+            self._signal = SignalAPI(self.signal_service, self.phone_number)
         except KeyError:
             raise SignalBotError("Could not initialize SignalAPI with given config")
 
@@ -49,41 +45,11 @@ class SignalBot:
         self._event_loop = asyncio.get_event_loop()
         self._q = asyncio.Queue()
 
-    def _init_storage(self):
-        try:
-            self.storage = shelve.open(self.config['object_storage_file'], writeback=True)
-
-        except Exception as e:
-            logging.error(
-                "[Bot] Could not initialize Shelve Storage."
-            )
-            raise e
-
     def _init_scheduler(self):
         try:
             self.scheduler = AsyncIOScheduler(event_loop=self._event_loop)
         except Exception as e:
             raise SignalBotError(f"Could not initialize scheduler: {e}")
-
-    def listen(self, required_id: str, optional_id: str = None):
-        # Case 1: required id is a phone number, optional_id is not being used
-        if is_phone_number(required_id):
-            self.user_chats.add(required_id)
-            return
-
-        # Case 2: required id is a group id
-        if is_group_id(required_id) and is_internal_id(optional_id):
-            self.group_chats[optional_id] = required_id
-            return
-
-        # Case 3: optional_id is a group id (Case 2 swapped)
-        if is_internal_id(required_id) and is_group_id(optional_id):
-            self.group_chats[required_id] = optional_id
-            return
-
-        logging.warning(
-            "[Bot] Can't listen for user/group because input does not look valid"
-        )
 
     def register(self, command: Command):
         command.bot = self
@@ -127,7 +93,7 @@ class SignalBot:
                 )
             else:
                 sent_message = Message(
-                    source=self._phone_number,  # no need to pretend
+                    source=self.phone_number,  # no need to pretend
                     timestamp=timestamp,
                     type=MessageType.SYNC_MESSAGE,
                     text=text,
@@ -174,13 +140,12 @@ class SignalBot:
 
                 try:
                     message = Message.parse(raw_message)
+                    if not should_react(self.user_chats, self.group_chats, message):
+                        continue
+                    await self._ask_commands_to_handle(message)
+
                 except UnknownMessageFormatError:
-                    continue
-
-                if not should_react(self.user_chats, self.group_chats, message):
-                    continue
-
-                await self._ask_commands_to_handle(message)
+                    logging.info(f"[Bot] Unknown message format: {raw_message}")
 
         except ReceiveMessagesError as e:
             # TODO: retry strategy

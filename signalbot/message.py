@@ -1,5 +1,8 @@
 import json
+import logging
+import typing
 from enum import Enum
+from typing import Dict, List, Optional, Tuple
 
 
 class MessageType(Enum):
@@ -17,6 +20,7 @@ class Message:
         base64_attachments: list = None,
         group: str = None,
         reaction: str = None,
+        mentions: list = None,
         raw_message: str = None,
     ):
         # required
@@ -29,6 +33,7 @@ class Message:
             self.base64_attachments = []
         self.group = group
         self.reaction = reaction
+        self.mentions = mentions if mentions is not None else []
 
         self.raw_message = raw_message
 
@@ -55,6 +60,7 @@ class Message:
             raise UnknownMessageFormatError
 
         # Option 1: syncMessage
+
         if "syncMessage" in raw_message["envelope"]:
             type = MessageType.SYNC_MESSAGE
             text = cls._parse_sync_message(raw_message["envelope"]["syncMessage"])
@@ -71,6 +77,7 @@ class Message:
             text = cls._parse_data_message(raw_message["envelope"]["dataMessage"])
             group = cls._parse_group_information(raw_message["envelope"]["dataMessage"])
             reaction = cls._parse_reaction(raw_message["envelope"]["dataMessage"])
+            mentions = cls._parse_mentions(raw_message["envelope"]["dataMessage"])
 
         else:
             raise UnknownMessageFormatError
@@ -78,7 +85,7 @@ class Message:
         # TODO: base64_attachments
         base64_attachments = []
 
-        return cls(source, timestamp, type, text, base64_attachments, group, reaction)
+        return cls(source, timestamp, type, text, base64_attachments, group, reaction, mentions)
 
     @classmethod
     def _parse_sync_message(cls, sync_message: dict) -> str:
@@ -86,6 +93,17 @@ class Message:
             text = sync_message["sentMessage"]["message"]
             return text
         except Exception:
+            raise UnknownMessageFormatError
+
+    @classmethod
+    def _parse_mentions(cls, data_message: dict) -> List[str]:
+        try:
+            mentions = data_message.get('mentions')
+            if mentions is not None:
+                return [mentioned_user['number'] for mentioned_user in mentions]
+            return []
+        except Exception:
+            logging.info(f"Failed to parse mentions from {data_message}")
             raise UnknownMessageFormatError
 
     @classmethod
