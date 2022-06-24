@@ -8,6 +8,7 @@ services:
       - "8080:8080" #map docker port 8080 to host port 8080.
     volumes:
       - "./signal-cli-config:/home/.local/share/signal-cli"
+    restart: always
 
   db:
     image: postgres:14.1-alpine
