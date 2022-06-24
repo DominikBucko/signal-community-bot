@@ -1,6 +1,7 @@
 import os
 import db.database_functions as db
 import db.models as database
+import images as img
 
 from peewee import IntegrityError
 
@@ -45,6 +46,8 @@ commands = [
     {'name': 'list commands', 'description': 'shows list of commands', 'attachment': None, 'is_functional': True},
     {'name': '!addcontact ', 'description': 'adds listeners', 'attachment': None, 'is_functional': True},
     {'name': 'no so', 'command': "NO CO KOKOCI, DAVAJTE REACTY TAKOJ!!!!\n❤ - Yes\n👎 - No\n👍 - Yes, ked ostatni pojdu\n😥 - Mozem jebac\n😮 - Neskor sa napojim", 'description': 'launches gaming poll', 'attachment': None, 'is_functional': False},
+    {'name': 'scare me', 'description': 'scares user', 'attachment': img.scare_me, 'is_functional': False},
+    {'name': 'smh', 'description': 'smh gif', 'attachment': img.smh, 'is_functional': False},
 ]
 
 for command in commands:
