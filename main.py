@@ -7,6 +7,8 @@ import db.models as database
 import db.database_functions as db
 import signalbot.bot_utils as bot_utils
 from signalbot import SignalBot
+from db.commands.migrate_db import migrate_db
+from db.commands.fill_db import fill_db
 from commands.timed_commands import init_gaming_poll
 from config import config
 
@@ -15,6 +17,8 @@ logging.getLogger("apscheduler").setLevel(logging.WARNING)
 
 
 def main():
+    migrate_db()
+    fill_db()
 
     bot = SignalBot(config)
 

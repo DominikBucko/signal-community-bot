@@ -36,6 +36,11 @@ jobs:
           script: |
             cd signal-community-bot
             git pull origin main
-            sudo systemctl daemon-reload && sudo systemctl restart signalbot.service
+            sudo docker build -t signal-community-bot:latest .
+            export DB_USERNAME=${{secrets.DB_USERNAME}}
+            export DB_PASS=${{secrets.DB_PASS}}
+            export PG_PORT=${{secrets.PG_PORT}}
+            export PHONE_NUMBER=${{secrets.PHONE_NUMBER}}
+            sudo -E docker-compose -f Docker-compose.yml up -d
             
             
