@@ -28,8 +28,8 @@ async def execute_add_user_to_listeners(c: Context):
         raise e
 
 
-async def send_welcome_message_user(bot, number, admin_name):
-    receiver = number
+async def send_welcome_message_user(bot, required_id, admin_name):
+    receiver = required_id
     message = f"Hello! I'm your friendly neighbourhood Bot Will-E (sent by your friend {admin_name}), ready to serve " \
               f"you. I listen to your commands and will try to respond appropriately. You can type 'list commands' to" \
               f" see what I can do. Nice meeting you!"

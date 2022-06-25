@@ -16,15 +16,14 @@ class StaticCommands(Command):
         return "Commands triggered by text"
 
     async def handle(self, c: Context):
-        message_text = c.message.text
+        message_text = c.message.text.lower()
 
-        if message_text and message_text.lower() in self.triggers:
-            command = db.get_command_by_name(message_text.lower())
+        if message_text and message_text in self.triggers:
+            command = db.get_command_by_name(message_text)
             response_text = command.command if not None else ""
-            attachment = command.attachment if not None else ""
-            if attachment:
+            if command.attachment:
                 await c.send(response_text,
-                             base64_attachments=[attachment],
+                             base64_attachments=[command.attachment],
                              )
             else:
                 await c.send(response_text)

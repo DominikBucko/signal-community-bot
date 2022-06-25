@@ -24,3 +24,6 @@ class FunctionalCommands(Command):
 
             if message_text.startswith("!addcontact "):
                 await functional_commands.execute_add_user_to_listeners(c)
+
+            if message_text.startswith("!todo "):
+                await functional_commands.add_item_to_todo(c)

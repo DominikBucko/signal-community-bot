@@ -36,6 +36,7 @@ def get_chats():
 ### COMMANDS ###
 @db.database.atomic()
 def add_command(name, command=None, description=None, attachment=None, is_functional=False):
+    command = command.lower() if command else None
     command = db.Command.create(
         name=name,
         command=command,

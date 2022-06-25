@@ -82,7 +82,6 @@ class Message:
         else:
             raise UnknownMessageFormatError
 
-        # TODO: base64_attachments
         base64_attachments = []
 
         return cls(source, timestamp, type, text, base64_attachments, group, reaction, mentions)
