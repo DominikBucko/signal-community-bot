@@ -1,17 +1,9 @@
-import os
 import db.database_functions as db
-import db.models as database
-import db.commands.images as img
+import db.images as img
 from peewee import IntegrityError
 
 
 def fill_db():
-    database.database.init(database=os.environ['DB_NAME'],
-                           host=os.environ["DB_HOST"],
-                           user=os.environ["DB_USER"],
-                           password=os.environ["DB_PASSWORD"],
-                           port=os.environ["DB_PORT"])
-
     users = {
         "Dominik": "+421949186020",
         "Janik": "+421950764723",
@@ -46,6 +38,8 @@ def fill_db():
         {'name': 'vypicuj vila', 'command': 'VILO DRZ PICU', 'description': 'sends abusive content', 'attachment': None, 'is_functional': False},
         {'name': 'list commands', 'description': 'shows list of commands', 'attachment': None, 'is_functional': True},
         {'name': '!addcontact ', 'description': 'adds listeners', 'attachment': None, 'is_functional': True},
+        {'name': 'todo', 'description': 'shows todo list', 'attachment': None, 'is_functional': True},
+        {'name': '!todo ', 'description': 'adds todo item', 'attachment': None, 'is_functional': True},
         {'name': 'no so', 'command': "NO CO KOKOCI, DAVAJTE REACTY TAKOJ!!!!\n❤ - Yes\n👎 - No\n👍 - Yes, ked ostatni pojdu\n😥 - Mozem jebac\n😮 - Neskor sa napojim", 'description': 'launches gaming poll', 'attachment': None, 'is_functional': False},
         {'name': 'scare me', 'description': 'scares user', 'attachment': img.scare_me, 'is_functional': False},
         {'name': 'smh', 'description': 'smh gif', 'attachment': img.smh, 'is_functional': False},

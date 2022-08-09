@@ -19,7 +19,7 @@ class Message:
         text: str,
         base64_attachments: list = None,
         group: str = None,
-        reaction: str = None,
+        reaction: dict = None,
         mentions: list = None,
         raw_message: str = None,
     ):
@@ -122,9 +122,9 @@ class Message:
             return None
 
     @classmethod
-    def _parse_reaction(self, message: dict) -> str:
+    def _parse_reaction(self, message: dict) -> dict:
         try:
-            reaction = message["reaction"]["emoji"]
+            reaction = message["reaction"]
             return reaction
         except Exception:
             return None

@@ -16,10 +16,9 @@ class StaticCommands(Command):
         return "Commands triggered by text"
 
     async def handle(self, c: Context):
-        message_text = c.message.text.lower()
 
-        if message_text and message_text in self.triggers:
-            command = db.get_command_by_name(message_text)
+        if c.message.text and c.message.text.lower() in self.triggers:
+            command = db.get_command_by_name(c.message.text.lower())
             response_text = command.command if not None else ""
             if command.attachment:
                 await c.send(response_text,

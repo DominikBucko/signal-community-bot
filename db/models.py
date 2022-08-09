@@ -49,9 +49,17 @@ class TimedCommands(Command):
     server_time_offset = FloatField(default=-2)
 
 
-class todo(BaseModel):
+class Todo(BaseModel):
     name = CharField()
     chat = ForeignKeyField(Chats, backref='todos')
 
     class Meta:
         depends_on = (Chats,)
+
+
+class SentMessages(BaseModel):
+    signal_key = CharField(primary_key=True)
+    time_sent = DateTimeField()
+    todo_id = ForeignKeyField(Todo, backref='sent_messages', on_delete='CASCADE')
+    recipient = CharField()
+    target_author = CharField()

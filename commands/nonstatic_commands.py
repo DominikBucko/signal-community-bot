@@ -1,7 +1,8 @@
 import commands.functional_commands as functional_commands
 import db.database_functions as db
+import logging
 
-from signalbot import Command, Context
+from signalbot import Command, Context, Message, MessageType
 
 
 class FunctionalCommands(Command):
@@ -17,6 +18,7 @@ class FunctionalCommands(Command):
 
     async def handle(self, c: Context):
         message_text = c.message.text
+        reaction = c.message.reaction
 
         if message_text and message_text.startswith(tuple(self.triggers)):
             if message_text == "list commands":
@@ -27,3 +29,9 @@ class FunctionalCommands(Command):
 
             if message_text.startswith("!todo "):
                 await functional_commands.add_item_to_todo(c)
+
+            if message_text == "todo" or message_text == "Todo":
+                await functional_commands.show_todo_list(c)
+
+        if reaction and reaction['emoji'] == "👍":
+            await functional_commands.delete_todo(c)

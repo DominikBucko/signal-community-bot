@@ -24,7 +24,6 @@ async def execute_add_user_to_listeners(c: Context):
 
     except Exception as e:
         await c.react("❌")
-        print(e)
         raise e
 
 

@@ -10,12 +10,13 @@ class Context:
     async def send(
         self, text: str, base64_attachments: list = None, listen: bool = False
     ):
-        await self.bot.send(
+        timestamp = await self.bot.send(
             self.message.recipient(),
             text,
             base64_attachments=base64_attachments,
             listen=listen,
         )
+        return timestamp
 
     async def react(self, emoji: str):
         await self.bot.react(self.message, emoji)

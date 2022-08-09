@@ -112,6 +112,10 @@ class SignalBot:
         await self._signal.react(recipient, emoji, target_author, timestamp)
         logging.info(f"[Bot] New reaction: {emoji}")
 
+    async def react_to_sent_message(self, timestamp, emoji, recipient, target_author):
+        await self._signal.react(recipient, emoji, target_author, timestamp)
+        logging.info(f"[Bot] New reaction: {emoji}")
+
     async def start_typing(self, receiver: str):
         receiver = resolve_receiver(self.group_chats, receiver)
         await self._signal.start_typing(receiver)
