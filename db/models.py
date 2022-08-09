@@ -1,8 +1,15 @@
 from peewee import Model, Database, CharField, IntegerField, DateTimeField, \
     BooleanField, ForeignKeyField, TextField, FloatField, ManyToManyField, DatabaseProxy, PostgresqlDatabase
 from playhouse.shortcuts import ThreadSafeDatabaseMetadata
+import os
+import peeweedbevolve
 
-database = PostgresqlDatabase(None)
+database = PostgresqlDatabase(database=os.environ['DB_NAME'],
+                              host=os.environ["DB_HOST"],
+                              user=os.environ["DB_USER"],
+                              password=os.environ["DB_PASSWORD"],
+                              port=os.environ["DB_PORT"])
+
 
 class BaseModel(Model):
     class Meta:
@@ -14,6 +21,7 @@ class User(BaseModel):
     name = CharField()
     required_id = CharField(primary_key=True)
     is_super_user = BooleanField(default=False)
+
 
 # TODO create roles as enum field
 class Roles(BaseModel):

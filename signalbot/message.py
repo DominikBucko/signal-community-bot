@@ -70,6 +70,7 @@ class Message:
             reaction = cls._parse_reaction(
                 raw_message["envelope"]["syncMessage"]["sentMessage"]
             )
+            mentions = cls._parse_mentions(raw_message["envelope"]["syncMessage"]["sentMessage"])
 
         # Option 2: dataMessage
         elif "dataMessage" in raw_message["envelope"]:

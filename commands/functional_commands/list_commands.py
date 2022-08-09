@@ -1,6 +1,7 @@
 import db.database_functions as db
 from signalbot import Command, Context
 
+
 async def execute_list_commands(c: Context):
     # Non-functional commands
     response = "Static commands:\n"
