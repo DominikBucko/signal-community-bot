@@ -2,6 +2,7 @@ import asyncio
 import time
 import shelve
 import logging
+import base64
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -119,6 +120,14 @@ class SignalBot:
     async def start_typing(self, receiver: str):
         receiver = resolve_receiver(self.group_chats, receiver)
         await self._signal.start_typing(receiver)
+
+    async def get_attachment(self, attachment_id: str):
+        image = await self._signal.download_attachment(attachment_id)
+        return base64.b64encode(image)
+
+    async def get_groups(self):
+        return await self._signal.get_group_info()
+
 
     async def stop_typing(self, receiver: str):
         receiver = resolve_receiver(self.group_chats, receiver)

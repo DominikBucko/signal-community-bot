@@ -21,19 +21,20 @@ class Message:
         group: str = None,
         reaction: dict = None,
         mentions: list = None,
+        quote: dict = None,
         raw_message: str = None,
+
     ):
         # required
         self.source = source
         self.timestamp = timestamp
         self.type = type
         self.text = text
-        # optional
-        if base64_attachments is None:
-            self.base64_attachments = []
+        self.base64_attachments = base64_attachments if base64_attachments is not None else []
         self.group = group
         self.reaction = reaction
         self.mentions = mentions if mentions is not None else []
+        self.quote = quote
 
         self.raw_message = raw_message
 
@@ -60,6 +61,7 @@ class Message:
             raise UnknownMessageFormatError
 
         # Option 1: syncMessage
+        base64_attachments = []
 
         if "syncMessage" in raw_message["envelope"]:
             type = MessageType.SYNC_MESSAGE
@@ -70,7 +72,8 @@ class Message:
             reaction = cls._parse_reaction(
                 raw_message["envelope"]["syncMessage"]["sentMessage"]
             )
-            mentions = cls._parse_mentions(raw_message["envelope"]["syncMessage"]["sentMessage"])
+            mentions = []
+            quote = None
 
         # Option 2: dataMessage
         elif "dataMessage" in raw_message["envelope"]:
@@ -79,13 +82,13 @@ class Message:
             group = cls._parse_group_information(raw_message["envelope"]["dataMessage"])
             reaction = cls._parse_reaction(raw_message["envelope"]["dataMessage"])
             mentions = cls._parse_mentions(raw_message["envelope"]["dataMessage"])
+            quote = cls._parse_quote(raw_message["envelope"]["dataMessage"])
+            base64_attachments = cls._parse_attachments(raw_message["envelope"]["dataMessage"])
 
         else:
             raise UnknownMessageFormatError
 
-        base64_attachments = []
-
-        return cls(source, timestamp, type, text, base64_attachments, group, reaction, mentions)
+        return cls(source, timestamp, type, text, base64_attachments, group, reaction, mentions, quote)
 
     @classmethod
     def _parse_sync_message(cls, sync_message: dict) -> str:
@@ -104,6 +107,26 @@ class Message:
             return []
         except Exception:
             logging.info(f"Failed to parse mentions from {data_message}")
+            raise UnknownMessageFormatError
+
+    @classmethod
+    def _parse_quote(cls, data_message: dict) -> dict:
+        try:
+            quote = data_message.get('quote')
+            return quote
+        except Exception:
+            logging.info(f"Failed to parse quote from {data_message}")
+            raise UnknownMessageFormatError
+
+    @classmethod
+    def _parse_attachments(cls, data_message: dict) -> list:
+        try:
+            attachments = data_message.get('attachments')
+            if attachments is not None:
+                return [attachment for attachment in attachments]
+            return []
+        except Exception:
+            logging.info(f"Failed to parse attachments from {data_message}")
             raise UnknownMessageFormatError
 
     @classmethod

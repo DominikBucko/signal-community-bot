@@ -2,6 +2,7 @@ from peewee import Model, Database, CharField, IntegerField, DateTimeField, \
     BooleanField, ForeignKeyField, TextField, FloatField, ManyToManyField, DatabaseProxy, PostgresqlDatabase
 from playhouse.shortcuts import ThreadSafeDatabaseMetadata
 import os
+import datetime
 import peeweedbevolve
 
 database = PostgresqlDatabase(database=os.environ['DB_NAME'],
@@ -67,7 +68,10 @@ class Todo(BaseModel):
 
 class SentMessages(BaseModel):
     signal_key = CharField(primary_key=True)
-    time_sent = DateTimeField()
-    todo_id = ForeignKeyField(Todo, backref='sent_messages', on_delete='CASCADE')
-    recipient = CharField()
-    target_author = CharField()
+    time_sent = DateTimeField(default=datetime.datetime.now)
+    todo_id = ForeignKeyField(Todo, backref='sent_messages', on_delete='CASCADE', null=True)
+    description = TextField(null=True)
+    command = ForeignKeyField(Command, backref='sent_messages', on_delete='CASCADE', null=True)
+    timed_command = ForeignKeyField(TimedCommands, backref='sent_messages', on_delete='CASCADE', null=True)
+    recipient = CharField(null=True)
+    target_author = CharField(null=True)

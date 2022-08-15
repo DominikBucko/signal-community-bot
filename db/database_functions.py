@@ -83,11 +83,13 @@ def delete_todo(todo_id):
     todo.save()
 
 
-def add_sent_message(signal_key, todo_id, recipient="", target_author=""):
+def add_sent_message(signal_key, todo_id=None, recipient=None, target_author=None, description=None, command=None, timed_command=None):
     sent_message = db.SentMessages.create(
+        description=description,
+        command=command,
+        timed_command=timed_command,
         signal_key=signal_key,
         todo_id=todo_id,
-        time_sent=datetime.datetime.now(),
         recipient=recipient,
         target_author=target_author
     )

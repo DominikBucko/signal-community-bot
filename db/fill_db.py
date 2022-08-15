@@ -35,14 +35,16 @@ def fill_db():
 
 
     commands = [
-        {'name': 'vypicuj vila', 'command': 'VILO DRZ PICU', 'description': 'sends abusive content', 'attachment': None, 'is_functional': False},
+        {'name': 'vypicuj vila', 'description': 'sends abusive content', 'attachment': None, 'is_functional': True},
         {'name': 'list commands', 'description': 'shows list of commands', 'attachment': None, 'is_functional': True},
         {'name': '!addcontact ', 'description': 'adds listeners', 'attachment': None, 'is_functional': True},
-        {'name': 'todo', 'description': 'shows todo list', 'attachment': None, 'is_functional': True},
+        {'name': '!addcommand ', 'description': 'adds command', 'attachment': None, 'is_functional': True},
+        {'name': 'smh', 'description': 'smh gif', 'attachment': img.smh, 'is_functional': False},
         {'name': '!todo ', 'description': 'adds todo item', 'attachment': None, 'is_functional': True},
+        {'name': 'todo', 'description': 'shows todo list', 'attachment': None, 'is_functional': True},
         {'name': 'no so', 'command': "NO CO KOKOCI, DAVAJTE REACTY TAKOJ!!!!\n❤ - Yes\n👎 - No\n👍 - Yes, ked ostatni pojdu\n😥 - Mozem jebac\n😮 - Neskor sa napojim", 'description': 'launches gaming poll', 'attachment': None, 'is_functional': False},
         {'name': 'scare me', 'description': 'scares user', 'attachment': img.scare_me, 'is_functional': False},
-        {'name': 'smh', 'description': 'smh gif', 'attachment': img.smh, 'is_functional': False},
+        {'name': '!changecommand ', 'description': 'changes command', 'attachment': None, 'is_functional': True},
     ]
 
     for command in commands:

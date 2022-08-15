@@ -1,12 +1,14 @@
 import aiohttp
+import asyncio
+import json
 import websockets
 
 
 class SignalAPI:
     def __init__(
-        self,
-        signal_service: str,
-        phone_number: str,
+            self,
+            signal_service: str,
+            phone_number: str,
     ):
         self.signal_service = signal_service
         self.phone_number = phone_number
@@ -25,7 +27,7 @@ class SignalAPI:
             raise ReceiveMessagesError(e)
 
     async def send(
-        self, receiver: str, message: str, base64_attachments: list = None
+            self, receiver: str, message: str, base64_attachments: list = None
     ) -> aiohttp.ClientResponse:
         uri = self._send_rest_uri()
         if base64_attachments is None:
@@ -42,14 +44,14 @@ class SignalAPI:
                 resp.raise_for_status()
                 return resp
         except (
-            aiohttp.ClientError,
-            aiohttp.http_exceptions.HttpProcessingError,
-            KeyError,
+                aiohttp.ClientError,
+                aiohttp.http_exceptions.HttpProcessingError,
+                KeyError,
         ) as e:
             raise e
 
     async def react(
-        self, recipient: str, reaction: str, target_author: str, timestamp: int
+            self, recipient: str, reaction: str, target_author: str, timestamp: int
     ) -> aiohttp.ClientResponse:
         uri = self._react_rest_uri()
         payload = {
@@ -64,8 +66,8 @@ class SignalAPI:
                 resp.raise_for_status()
                 return resp
         except (
-            aiohttp.ClientError,
-            aiohttp.http_exceptions.HttpProcessingError,
+                aiohttp.ClientError,
+                aiohttp.http_exceptions.HttpProcessingError,
         ):
             raise ReactionError
 
@@ -80,8 +82,8 @@ class SignalAPI:
                 resp.raise_for_status()
                 return resp
         except (
-            aiohttp.ClientError,
-            aiohttp.http_exceptions.HttpProcessingError,
+                aiohttp.ClientError,
+                aiohttp.http_exceptions.HttpProcessingError,
         ):
             raise StartTypingError
 
@@ -96,10 +98,37 @@ class SignalAPI:
                 resp.raise_for_status()
                 return resp
         except (
-            aiohttp.ClientError,
-            aiohttp.http_exceptions.HttpProcessingError,
+                aiohttp.ClientError,
+                aiohttp.http_exceptions.HttpProcessingError,
         ):
             raise StopTypingError
+
+    async def download_attachment(self, attachment_id: str):
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"http://{self.signal_service}/v1/attachments/{attachment_id}") as r:
+                    return await r.read()
+
+        except (
+                aiohttp.ClientError,
+                aiohttp.http_exceptions.HttpProcessingError,
+                KeyError,
+        ) as e:
+            raise e
+
+    async def get_group_info(self):
+        try:
+            async with aiohttp.ClientSession() as session:
+                resp = await session.get(f"http://{self.signal_service}/v1/groups/{self.phone_number}")
+                resp.raise_for_status()
+                return await resp.json()
+
+        except (
+                aiohttp.ClientError,
+                aiohttp.http_exceptions.HttpProcessingError,
+                KeyError,
+        ) as e:
+            raise e
 
     def _receive_ws_uri(self):
         return f"ws://{self.signal_service}/v1/receive/{self.phone_number}"
